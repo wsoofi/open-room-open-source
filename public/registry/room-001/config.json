@@ -14,12 +14,22 @@
       "modal": "welcome_guide"
     },
     {
+      "id": "registry-clipboard",
+      "label": "Registry",
+      "x": 81,
+      "y": 18,
+      "width": 11,
+      "height": 24,
+      "action": "open_modal",
+      "modal": "registry"
+    },
+    {
       "id": "exit-door",
       "label": "Exit to Floor Plan",
       "x": 79,
-      "y": 18,
+      "y": 43,
       "width": 13,
-      "height": 65,
+      "height": 40,
       "action": "navigate_floor"
     }
   ]

@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import RoomView from './components/RoomView';
+import ReservationModal from './components/ReservationModal';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
@@ -10,6 +11,9 @@ export default function OpenRoom() {
   const [activeRoom, setActiveRoom] = useState<any>(null);
   const [myId, setMyId] = useState<string>('');
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [reserving, setReserving] = useState<{ x: number; y: number } | null>(null);
+  const [successRoom, setSuccessRoom] = useState<{ room: any; roomId: string } | null>(null);
+  const [previewRoom, setPreviewRoom] = useState<any>(null);
 
   const refreshRooms = useCallback(async () => {
     const { data } = await supabase.from('rooms').select('*');
@@ -81,30 +85,21 @@ export default function OpenRoom() {
   const yRange = Array.from({ length: maxY - minY + 1 }, (_, i) => minY + i);
   const occupied = new Set(rooms.map(r => `${r.grid_x},${r.grid_y}`));
 
-  const createRoom = async (x: number, y: number) => {
-    const { data } = await supabase.from('rooms').insert([{
-      name: `Room ${myId.slice(-4)}`, 
-      owner_name: 'Resident', 
-      owner_id: myId, 
-      grid_x: x, 
-      grid_y: y
-    }]).select().single();
-    
-    if (data) {
-      setRooms(prev => [...prev, data]);
-      setActiveRoom(data); 
-    }
+  const handleReservationSuccess = (room: any, roomId: string) => {
+    setRooms(prev => [...prev, room]);
+    setReserving(null);
+    setSuccessRoom({ room, roomId });
   };
 
   return (
-    <main className="min-h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-20 overflow-auto">
+    <main className="min-h-screen w-screen bg-stone-100 flex flex-col items-center justify-center p-20 overflow-auto">
       <div className="mb-8 text-center">
-        <h1 className="text-white text-3xl font-black tracking-tighter uppercase">Open Room</h1>
+        <h1 className="text-slate-900 text-3xl font-black tracking-tighter uppercase">Open Room</h1>
         <div className="flex items-center justify-center gap-2">
-          <p className="text-slate-500 text-sm font-medium">Infinite Floor Plan</p>
-          <button 
+          <p className="text-slate-400 text-sm font-medium">Infinite Floor Plan</p>
+          <button
             onClick={() => setIsHelpOpen(true)}
-            className="w-5 h-5 flex items-center justify-center rounded-full border border-slate-700 text-slate-500 hover:text-white hover:border-white transition-all text-[10px] font-bold"
+            className="w-5 h-5 flex items-center justify-center rounded-full border border-slate-300 text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-all text-[10px] font-bold"
           >
             ?
           </button>
@@ -120,12 +115,12 @@ export default function OpenRoom() {
           if (room) {
             const isCommon = x === 0 && y === 0;
             return (
-              <button 
+              <button
                 key={`${x}-${y}`}
-                onClick={() => setActiveRoom(room)}
-                className={`w-28 h-28 rounded-2xl shadow-xl flex flex-col items-center justify-center transition-all hover:scale-105 border-4 ${
+                onClick={() => isCommon ? setActiveRoom(room) : setPreviewRoom(room)}
+                className={`w-28 h-28 rounded-2xl shadow-md flex flex-col items-center justify-center transition-all hover:scale-105 border-2 ${
                   isCommon ? 'bg-white border-amber-400 text-slate-900' :
-                  room.owner_id === myId ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300'
+                  room.owner_id === myId ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-white border-slate-200 text-slate-700'
                 }`}
               >
                 <span className="text-[9px] uppercase tracking-widest opacity-60 font-bold">{room.owner_name}</span>
@@ -140,7 +135,7 @@ export default function OpenRoom() {
           });
 
           return isAdjacent ? (
-            <button key={`${x}-${y}`} onClick={() => createRoom(x, y)} className="w-28 h-28 rounded-2xl border-4 border-dashed border-slate-800 hover:border-indigo-500 hover:bg-slate-800/50 flex items-center justify-center text-slate-700 hover:text-indigo-400 transition-all font-bold text-[10px]">
+            <button key={`${x}-${y}`} onClick={() => setReserving({ x, y })} className="w-28 h-28 rounded-2xl border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50 flex items-center justify-center text-slate-400 hover:text-indigo-500 transition-all font-bold text-[10px]">
               + ADD ROOM
             </button>
           ) : <div key={`${x}-${y}`} className="w-28 h-28" />;
@@ -149,51 +144,140 @@ export default function OpenRoom() {
 
       {/* OPEN ROOM GUIDE MODAL */}
       {isHelpOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6"
+        <div
+          className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6"
           onClick={() => setIsHelpOpen(false)}
         >
-          <div 
-            className="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl"
+          <div
+            className="bg-white border border-slate-200 p-8 rounded-3xl max-w-sm w-full shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
-            <h2 className="text-white text-2xl font-black italic mb-2 tracking-tight">Open Room Guide</h2>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+            <h2 className="text-slate-900 text-2xl font-black italic mb-2 tracking-tight">Open Room Guide</h2>
+            <p className="text-slate-500 text-sm leading-relaxed mb-6">
               This is a social experiment in <strong>collective vibe coding</strong>. We're building an infinite structure together, one room at a time.
             </p>
 
             <div className="space-y-4 mb-8">
               <div className="flex gap-3">
                 <span className="text-indigo-500 font-bold">●</span>
-                <p className="text-xs text-slate-300"><strong>Play:</strong> Enter any room to decorate or see who lives there.</p>
+                <p className="text-xs text-slate-600"><strong>Play:</strong> Enter any room to see who lives there.</p>
               </div>
               <div className="flex gap-3">
                 <span className="text-indigo-500 font-bold">●</span>
-                <p className="text-xs text-slate-300"><strong>Build:</strong> Add rooms to the grid to expand the building footprint.</p>
+                <p className="text-xs text-slate-600"><strong>Build:</strong> Add rooms to the grid to expand the building footprint.</p>
               </div>
               <div className="flex gap-3">
                 <span className="text-indigo-500 font-bold">●</span>
-                <p className="text-xs text-slate-300"><strong>Vibe:</strong> This project belongs to the builders. Fork the repo and use your AI to help us grow.</p>
+                <p className="text-xs text-slate-600"><strong>Vibe:</strong> This project belongs to the builders. Fork the repo and use your AI to help us grow.</p>
               </div>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-xl mb-6 border border-slate-800">
-              <p className="text-[10px] uppercase font-black text-slate-500 mb-2 tracking-widest">Contribute on GitHub</p>
-              <a 
-                href="https://github.com/alyssafuward/open-room" 
-                target="_blank" 
+            <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-200">
+              <p className="text-[10px] uppercase font-black text-slate-400 mb-2 tracking-widest">Contribute on GitHub</p>
+              <a
+                href="https://github.com/alyssafuward/open-room"
+                target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-mono text-indigo-400 hover:text-white break-all underline underline-offset-4"
+                className="text-xs font-mono text-indigo-500 hover:text-indigo-700 break-all underline underline-offset-4"
               >
                 github.com/alyssafuward/open-room
               </a>
             </div>
 
-            <button 
+            <button
               onClick={() => setIsHelpOpen(false)}
-              className="w-full py-4 bg-white text-slate-900 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-400 transition-colors"
+              className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-600 transition-colors"
             >
               Back to Open Room
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Room Info Modal */}
+      {previewRoom && (
+        <div
+          className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+          onClick={() => setPreviewRoom(null)}
+        >
+          <div
+            className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Reserved Room</p>
+            <h2 className="text-slate-900 text-2xl font-black tracking-tight mb-4">{previewRoom.name}</h2>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-400">GitHub</span>
+                <span className="text-sm font-mono text-slate-700">@{previewRoom.github_username}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                <span className="text-xs font-black uppercase tracking-widest text-indigo-400">Room ID</span>
+                <code className="text-sm font-mono font-bold text-indigo-700">{previewRoom.registry_id}</code>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setPreviewRoom(null)}
+              className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reservation Modal */}
+      {reserving && (
+        <ReservationModal
+          x={reserving.x}
+          y={reserving.y}
+          onClose={() => setReserving(null)}
+          onSuccess={handleReservationSuccess}
+        />
+      )}
+
+      {/* Success Modal */}
+      {successRoom && (
+        <div
+          className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 overflow-y-auto p-6"
+          onClick={() => setSuccessRoom(null)}
+        >
+          <div
+            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl mx-auto my-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="text-4xl mb-4">🎉</div>
+            <h2 className="text-slate-900 text-2xl font-black tracking-tight mb-1">Room Reserved!</h2>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+              This is your room ID. <strong className="text-slate-900">Save it now</strong> — you'll need it to name your folder in the repo. We'll add email confirmation soon.
+            </p>
+
+            <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-5 mb-6 text-center">
+              <p className="text-[10px] uppercase font-black text-indigo-400 tracking-widest mb-2">Your Room ID</p>
+              <p className="text-2xl font-black text-indigo-700 font-mono tracking-tight mb-3">{successRoom.roomId}</p>
+              <button
+                onClick={() => navigator.clipboard.writeText(successRoom.roomId)}
+                className="text-xs font-bold text-indigo-500 hover:text-indigo-700 underline underline-offset-4 transition-colors"
+              >
+                Copy to clipboard
+              </button>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-sm text-slate-600 leading-relaxed space-y-2">
+              <p className="font-black text-slate-900 text-xs uppercase tracking-widest mb-3">Next steps</p>
+              <p>1. Fork <code className="bg-slate-100 px-1 rounded text-xs">github.com/alyssafuward/open-room</code></p>
+              <p>2. Copy <code className="bg-slate-100 px-1 rounded text-xs">registry/_template/</code> → <code className="bg-slate-100 px-1 rounded text-xs">registry/{successRoom.roomId}/</code></p>
+              <p>3. Add your background image and edit <code className="bg-slate-100 px-1 rounded text-xs">config.json</code></p>
+              <p>4. Open a Pull Request</p>
+            </div>
+
+            <button
+              onClick={() => setSuccessRoom(null)}
+              className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-600 transition-colors"
+            >
+              Back to Floor Plan
             </button>
           </div>
         </div>

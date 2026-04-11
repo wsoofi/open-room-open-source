@@ -1,5 +1,8 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 interface Hotspot {
   id: string;
@@ -19,6 +22,14 @@ interface RoomConfig {
   hotspots: Hotspot[];
 }
 
+interface RegistryEntry {
+  id: string;
+  name: string;
+  github_username: string;
+  registry_id: string;
+  status: string;
+}
+
 export default function RoomView({ onBack, registryId }: {
   onBack: () => void;
   registryId: string;
@@ -26,6 +37,8 @@ export default function RoomView({ onBack, registryId }: {
   const [config, setConfig] = useState<RoomConfig | null>(null);
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [hoveredHotspot, setHoveredHotspot] = useState<string | null>(null);
+  const [registryEntries, setRegistryEntries] = useState<RegistryEntry[]>([]);
+  const [registryLoading, setRegistryLoading] = useState(false);
 
   useEffect(() => {
     fetch(`/registry/${registryId}/config.json`)
@@ -33,11 +46,28 @@ export default function RoomView({ onBack, registryId }: {
       .then(setConfig);
   }, [registryId]);
 
+  const openRegistry = async () => {
+    setActiveModal('registry');
+    setRegistryLoading(true);
+    const { data } = await supabase
+      .from('rooms')
+      .select('id, name, github_username, registry_id, status')
+      .neq('status', 'expired')
+      .not('registry_id', 'is', null)
+      .order('reserved_at', { ascending: true });
+    setRegistryEntries(data || []);
+    setRegistryLoading(false);
+  };
+
   const handleHotspot = (hotspot: Hotspot) => {
     if (hotspot.action === 'navigate_floor') {
       onBack();
     } else if (hotspot.action === 'open_modal') {
-      setActiveModal(hotspot.modal || null);
+      if (hotspot.modal === 'registry') {
+        openRegistry();
+      } else {
+        setActiveModal(hotspot.modal || null);
+      }
     }
   };
 
@@ -50,42 +80,44 @@ export default function RoomView({ onBack, registryId }: {
   }
 
   return (
-    <main className="h-screen w-screen relative overflow-hidden">
-      {/* Background */}
-      <img
-        src={config.background_image}
-        alt={config.room_display_name}
-        className="absolute inset-0 w-full h-full object-cover"
-        draggable={false}
-      />
-
-      {/* Hotspots */}
-      {config.hotspots.map(hotspot => (
-        <button
-          key={hotspot.id}
-          onClick={() => handleHotspot(hotspot)}
-          onMouseEnter={() => setHoveredHotspot(hotspot.id)}
-          onMouseLeave={() => setHoveredHotspot(null)}
-          className="absolute rounded-lg transition-all duration-150"
-          style={{
-            left: `${hotspot.x}%`,
-            top: `${hotspot.y}%`,
-            width: `${hotspot.width}%`,
-            height: `${hotspot.height}%`,
-            background: hoveredHotspot === hotspot.id ? 'rgba(0,0,0,0.35)' : 'transparent',
-            cursor: 'pointer',
-          }}
-          title={hotspot.label}
-          aria-label={hotspot.label}
+    <main className="min-h-screen w-screen overflow-y-auto overflow-x-hidden bg-stone-100">
+      {/* Image + hotspots share the same container so % positions always track the image */}
+      <div className="relative w-full">
+        <img
+          src={config.background_image}
+          alt={config.room_display_name}
+          className="w-full h-auto block"
+          draggable={false}
         />
-      ))}
 
-      {/* Tooltip */}
-      {hoveredHotspot && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs font-medium px-3 py-1.5 rounded-full pointer-events-none backdrop-blur-sm">
-          {config.hotspots.find(h => h.id === hoveredHotspot)?.label}
-        </div>
-      )}
+        {/* Hotspots */}
+        {config.hotspots.map(hotspot => (
+          <button
+            key={hotspot.id}
+            onClick={() => handleHotspot(hotspot)}
+            onMouseEnter={() => setHoveredHotspot(hotspot.id)}
+            onMouseLeave={() => setHoveredHotspot(null)}
+            className="absolute rounded-lg transition-all duration-150"
+            style={{
+              left: `${hotspot.x}%`,
+              top: `${hotspot.y}%`,
+              width: `${hotspot.width}%`,
+              height: `${hotspot.height}%`,
+              background: hoveredHotspot === hotspot.id ? 'rgba(0,0,0,0.35)' : 'transparent',
+              cursor: 'pointer',
+            }}
+            title={hotspot.label}
+            aria-label={hotspot.label}
+          />
+        ))}
+
+        {/* Tooltip */}
+        {hoveredHotspot && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs font-medium px-3 py-1.5 rounded-full pointer-events-none backdrop-blur-sm">
+            {config.hotspots.find(h => h.id === hoveredHotspot)?.label}
+          </div>
+        )}
+      </div>
 
       {/* Welcome Guide Modal */}
       {activeModal === 'welcome_guide' && (
@@ -142,6 +174,51 @@ export default function RoomView({ onBack, registryId }: {
                 github.com/alyssafuward/open-room
               </a>
             </div>
+
+            <button
+              onClick={() => setActiveModal(null)}
+              className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-600 transition-colors"
+            >
+              Back to Room
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Registry Modal */}
+      {activeModal === 'registry' && (
+        <div
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 overflow-y-auto p-6"
+          onClick={() => setActiveModal(null)}
+        >
+          <div
+            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl mx-auto my-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 className="text-slate-900 text-2xl font-black tracking-tight mb-1">Room Registry</h2>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+              Reserved rooms and their IDs. If you've reserved a room, find your room ID here.
+            </p>
+
+            {registryLoading ? (
+              <div className="text-center py-8 text-slate-400 text-sm">Loading registry…</div>
+            ) : registryEntries.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-sm">No rooms reserved yet.</div>
+            ) : (
+              <div className="space-y-2 mb-6">
+                {registryEntries.map(entry => (
+                  <div key={entry.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{entry.name}</p>
+                      <p className="text-xs text-slate-400">@{entry.github_username}</p>
+                    </div>
+                    <div className="text-right">
+                      <code className="text-xs font-mono text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{entry.registry_id}</code>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <button
               onClick={() => setActiveModal(null)}
