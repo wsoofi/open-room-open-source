@@ -2,6 +2,7 @@
   "room_display_name": "Your Room Name",
   "owner": "your-github-username",
   "background_image": "/registry/your-room-id/background.jpeg",
+  "hide_back_button": false,
   "hotspots": [
     {
       "_note": "Every room needs at least one navigate_floor hotspot. Position it over a door or any exit element in your image. A default '← Floor Plan' button always appears in the top-left corner, but a custom door makes the room feel more intentional.",

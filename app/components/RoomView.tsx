@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import DiagramModal from './DiagramModal';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
@@ -28,6 +29,7 @@ interface RoomConfig {
   background_image: string;
   hotspots: Hotspot[];
   links?: RoomLink[];
+  hide_back_button?: boolean;
 }
 
 interface RegistryEntry {
@@ -85,6 +87,8 @@ export default function RoomView({ onBack, registryId, room }: {
     } else if (hotspot.action === 'open_modal') {
       if (hotspot.modal === 'registry') {
         openRegistry();
+      } else if (hotspot.modal === 'diagram') {
+        setActiveModal('diagram');
       } else {
         setActiveModal(hotspot.modal || null);
       }
@@ -211,13 +215,15 @@ export default function RoomView({ onBack, registryId, room }: {
           </div>
         )}
 
-        {/* Default back button — always visible, builders can supplement with a custom door hotspot */}
-        <button
-          onClick={onBack}
-          className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-slate-900 text-xs font-black px-4 py-2 rounded-full shadow-md hover:bg-slate-900 hover:text-white transition-all border border-slate-200"
-        >
-          ← Floor Plan
-        </button>
+        {/* Default back button — hidden if room has a custom door hotspot */}
+        {!config.hide_back_button && (
+          <button
+            onClick={onBack}
+            className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-slate-900 text-xs font-black px-4 py-2 rounded-full shadow-md hover:bg-slate-900 hover:text-white transition-all border border-slate-200"
+          >
+            ← Floor Plan
+          </button>
+        )}
 
         {/* Persistent link buttons */}
         {config.links && config.links.length > 0 && (
@@ -316,6 +322,11 @@ export default function RoomView({ onBack, registryId, room }: {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Diagram Modal */}
+      {activeModal === 'diagram' && (
+        <DiagramModal onClose={() => setActiveModal(null)} />
       )}
 
       {/* Registry Modal */}

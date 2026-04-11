@@ -2,6 +2,7 @@
   "room_display_name": "Welcome Room",
   "owner": "Building Admin",
   "background_image": "/registry/room-001/background.jpeg",
+  "hide_back_button": true,
   "hotspots": [
     {
       "id": "welcome-book",
@@ -12,6 +13,16 @@
       "height": 15,
       "action": "open_modal",
       "modal": "welcome_guide"
+    },
+    {
+      "id": "plant",
+      "label": "How does this work?",
+      "x": 68,
+      "y": 58,
+      "width": 10,
+      "height": 30,
+      "action": "open_modal",
+      "modal": "diagram"
     },
     {
       "id": "registry-clipboard",
