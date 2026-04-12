@@ -57,7 +57,7 @@ Then:
 
 1. Create a GitHub issue with their description as the body
 2. Note the issue number
-3. Create a feature branch: `feature/<issue-number>-<short-description>`
+3. Create a feature branch: `feature/<issue-number>-<short-description>` — the issue number **must** be in the branch name or commits will be blocked
 4. Check it out
 
 ```bash
@@ -66,7 +66,7 @@ git checkout main && git pull
 git checkout -b feature/<issue-number>-<short-description>
 ```
 
-Confirm the branch is checked out before moving on.
+For example, if the issue is #15: `feature/15-calm-den-room`. Confirm the branch is checked out before moving on.
 
 ---
 
