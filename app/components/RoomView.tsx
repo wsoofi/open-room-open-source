@@ -53,6 +53,8 @@ export default function RoomView({ onBack, registryId, room }: {
   const [registryEntries, setRegistryEntries] = useState<RegistryEntry[]>([]);
   const [registryLoading, setRegistryLoading] = useState(false);
   const [showRoomInfo, setShowRoomInfo] = useState(false);
+  const [editRequested, setEditRequested] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetch(`/registry/${registryId}/config.json`)
@@ -63,6 +65,20 @@ export default function RoomView({ onBack, registryId, room }: {
       .then(setConfig)
       .catch(() => setConfigError(true));
   }, [registryId]);
+
+  const requestEdit = async () => {
+    setEditLoading(true);
+    const { error } = await supabase.functions.invoke('create-edit-issue', {
+      body: {
+        registryId: room?.registry_id ?? registryId,
+        githubUsername: room?.github_username ?? config?.owner,
+        gridX: room?.grid_x,
+        gridY: room?.grid_y,
+      },
+    });
+    setEditLoading(false);
+    if (!error) setEditRequested(true);
+  };
 
   const openRegistry = async () => {
     setActiveModal('registry');
@@ -207,6 +223,19 @@ export default function RoomView({ onBack, registryId, room }: {
                     <span className="text-xs text-slate-400">Room ID</span>
                     <code className="text-xs font-mono font-bold text-indigo-600">{room.registry_id}</code>
                   </div>
+                )}
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100">
+                {editRequested ? (
+                  <p className="text-xs text-center text-green-600 font-bold">Edit request submitted!</p>
+                ) : (
+                  <button
+                    onClick={requestEdit}
+                    disabled={editLoading}
+                    className="w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors disabled:opacity-50"
+                  >
+                    {editLoading ? 'Requesting…' : 'Edit Room'}
+                  </button>
                 )}
               </div>
             </div>

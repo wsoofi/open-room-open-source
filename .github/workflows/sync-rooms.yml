@@ -10,7 +10,8 @@ on:
       - 'public/registry/**/config.json'
 
 jobs:
-  # On PR: sync prod → dev, then update changed rooms in dev so preview reflects config
+  # On PR: update changed rooms in dev so preview reflects config
+  # New reservations are mirrored to dev automatically via the mirror-to-dev Edge Function
   sync-prod-to-dev:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -18,56 +19,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Mirror prod Supabase into dev
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_DEV_URL: ${{ secrets.SUPABASE_DEV_URL }}
-          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
-        run: |
-          node << 'EOF'
-          async function run() {
-            // Fetch all rooms from prod
-            const prodRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rooms?select=*`, {
-              headers: {
-                'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-              },
-            });
-
-            if (!prodRes.ok) {
-              console.error('Failed to fetch prod rooms:', await prodRes.text());
-              process.exit(1);
-            }
-
-            const rooms = await prodRes.json();
-            console.log(`Fetched ${rooms.length} rooms from prod`);
-
-            if (!rooms.length) return;
-
-            // Upsert all into dev
-            const devRes = await fetch(`${process.env.SUPABASE_DEV_URL}/rest/v1/rooms`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': process.env.SUPABASE_DEV_SERVICE_ROLE_KEY,
-                'Authorization': `Bearer ${process.env.SUPABASE_DEV_SERVICE_ROLE_KEY}`,
-                'Prefer': 'resolution=merge-duplicates',
-              },
-              body: JSON.stringify(rooms),
-            });
-
-            if (!devRes.ok) {
-              console.error('Failed to upsert into dev:', await devRes.text());
-              process.exit(1);
-            }
-
-            console.log(`✓ Synced ${rooms.length} rooms from prod → dev`);
-          }
-
-          run().catch(err => { console.error(err); process.exit(1); });
-          EOF
 
       - name: Update changed rooms in dev
         env:
@@ -233,41 +184,5 @@ jobs:
             .catch(err => { console.error(err); process.exit(1); });
           EOF
 
-      - name: Mirror prod → dev
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_DEV_URL: ${{ secrets.SUPABASE_DEV_URL }}
-          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
-        run: |
-          node << 'EOF'
-          async function run() {
-            const prodRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rooms?select=*`, {
-              headers: {
-                'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-              },
-            });
-
-            if (!prodRes.ok) { console.error(await prodRes.text()); process.exit(1); }
-            const rooms = await prodRes.json();
-            console.log(`Fetched ${rooms.length} rooms from prod`);
-            if (!rooms.length) return;
-
-            const devRes = await fetch(`${process.env.SUPABASE_DEV_URL}/rest/v1/rooms`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': process.env.SUPABASE_DEV_SERVICE_ROLE_KEY,
-                'Authorization': `Bearer ${process.env.SUPABASE_DEV_SERVICE_ROLE_KEY}`,
-                'Prefer': 'resolution=merge-duplicates',
-              },
-              body: JSON.stringify(rooms),
-            });
-
-            if (!devRes.ok) { console.error(await devRes.text()); process.exit(1); }
-            console.log(`✓ Synced ${rooms.length} rooms prod → dev`);
-          }
-
-          run().catch(err => { console.error(err); process.exit(1); });
-          EOF
+      # Mirror prod → dev step removed: new reservations are mirrored automatically
+      # via the mirror-to-dev Edge Function on INSERT
