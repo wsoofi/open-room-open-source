@@ -1,7 +1,7 @@
 name: Sync rooms to Supabase
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize]
     branches: [main]
   push:
@@ -13,7 +13,7 @@ jobs:
   # On PR: update changed rooms in dev so preview reflects config
   # New reservations are mirrored to dev automatically via the mirror-to-dev Edge Function
   sync-prod-to-dev:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
