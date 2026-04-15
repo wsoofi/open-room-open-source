@@ -26,7 +26,7 @@ function OpenRoomInner() {
   const [successRoom, setSuccessRoom] = useState<{ room: any; roomId: string } | null>(null);
 
   const refreshRooms = useCallback(async () => {
-    const { data } = await supabase.from('rooms').select('*');
+    const { data } = await supabase.from('rooms').select('*').neq('status', 'deleted');
     let roomList = data || [];
     
     // Check for the center piece: The Common Room
