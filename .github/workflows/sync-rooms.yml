@@ -75,49 +75,43 @@ jobs:
           SUPABASE_DEV_URL: ${{ secrets.SUPABASE_DEV_URL }}
           SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
         run: |
-          node << 'EOF'
-          const fs = require('fs');
+          # Only mark rooms deleted if their config.json was actually removed in this PR
+          deleted=$(git diff origin/main...HEAD --diff-filter=D --name-only -- 'public/registry/*/config.json' \
+            | sed 's|public/registry/||;s|/config.json||')
 
-          // Reconcile: fetch all active rooms from dev DB, mark deleted any whose registry folder is gone
-          async function reconcile() {
-            const res = await fetch(
-              `${process.env.SUPABASE_DEV_URL}/rest/v1/rooms?registry_id=not.is.null&status=eq.active&select=registry_id`,
+          if [ -z "$deleted" ]; then
+            echo "No registry deletions in this PR — nothing to mark deleted."
+            exit 0
+          fi
+
+          node << 'EOF'
+          const { execSync } = require('child_process');
+
+          const deleted = execSync(
+            "git diff origin/main...HEAD --diff-filter=D --name-only -- 'public/registry/*/config.json'"
+          ).toString().trim().split('\n')
+            .filter(Boolean)
+            .map(p => p.replace('public/registry/', '').replace('/config.json', ''));
+
+          if (!deleted.length) { console.log('Nothing to mark deleted.'); process.exit(0); }
+
+          Promise.all(deleted.map(async id => {
+            const patch = await fetch(
+              `${process.env.SUPABASE_DEV_URL}/rest/v1/rooms?registry_id=eq.${encodeURIComponent(id)}`,
               {
+                method: 'PATCH',
                 headers: {
+                  'Content-Type': 'application/json',
                   'apikey': process.env.SUPABASE_DEV_SERVICE_ROLE_KEY,
                   'Authorization': `Bearer ${process.env.SUPABASE_DEV_SERVICE_ROLE_KEY}`,
+                  'Prefer': 'return=representation',
                 },
+                body: JSON.stringify({ status: 'deleted', grid_x: null, grid_y: null }),
               }
             );
-            if (!res.ok) { console.error('Failed to fetch rooms', await res.json()); process.exit(1); }
-            const rooms = await res.json();
-
-            const toDelete = rooms
-              .map(r => r.registry_id)
-              .filter(id => !fs.existsSync(`public/registry/${id}/config.json`));
-
-            if (!toDelete.length) { console.log('Nothing to mark deleted.'); return; }
-
-            await Promise.all(toDelete.map(async id => {
-              const patch = await fetch(
-                `${process.env.SUPABASE_DEV_URL}/rest/v1/rooms?registry_id=eq.${encodeURIComponent(id)}`,
-                {
-                  method: 'PATCH',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': process.env.SUPABASE_DEV_SERVICE_ROLE_KEY,
-                    'Authorization': `Bearer ${process.env.SUPABASE_DEV_SERVICE_ROLE_KEY}`,
-                    'Prefer': 'return=representation',
-                  },
-                  body: JSON.stringify({ status: 'deleted', grid_x: null, grid_y: null }),
-                }
-              );
-              if (!patch.ok) { console.error(`Failed to mark deleted: ${id}`, await patch.json()); process.exit(1); }
-              console.log(`✓ ${id} marked deleted in dev`);
-            }));
-          }
-
-          reconcile().catch(err => { console.error(err); process.exit(1); });
+            if (!patch.ok) { console.error(`Failed to mark deleted: ${id}`, await patch.json()); process.exit(1); }
+            console.log(`✓ ${id} marked deleted in dev`);
+          })).catch(err => { console.error(err); process.exit(1); });
           EOF
 
   # On merge to main: update changed rooms in prod, then sync prod → dev
@@ -169,27 +163,18 @@ jobs:
             else console.log(`✓ ${folder} → "${name}", status: active`);
           }
 
-          // Reconcile: mark deleted any DB rows whose registry folder no longer exists
+          // Reconcile: mark deleted any rooms whose config.json was removed in this merge commit
           async function reconcile() {
-            const res = await fetch(
-              `${process.env.SUPABASE_URL}/rest/v1/rooms?registry_id=not.is.null&status=eq.active&select=registry_id`,
-              {
-                headers: {
-                  'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-                  'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-                },
-              }
-            );
-            if (!res.ok) { console.error('Failed to fetch rooms', await res.json()); process.exit(1); }
-            const rooms = await res.json();
+            const { execSync } = require('child_process');
+            const deleted = execSync(
+              "git diff HEAD~1 HEAD --diff-filter=D --name-only -- 'public/registry/*/config.json'"
+            ).toString().trim().split('\n')
+              .filter(Boolean)
+              .map(p => p.replace('public/registry/', '').replace('/config.json', ''));
 
-            const toDelete = rooms
-              .map(r => r.registry_id)
-              .filter(id => !fs.existsSync(`${registryDir}/${id}/config.json`));
+            if (!deleted.length) { console.log('Nothing to mark deleted.'); return; }
 
-            if (!toDelete.length) { console.log('Nothing to mark deleted.'); return; }
-
-            await Promise.all(toDelete.map(async id => {
+            await Promise.all(deleted.map(async id => {
               const patch = await fetch(
                 `${process.env.SUPABASE_URL}/rest/v1/rooms?registry_id=eq.${encodeURIComponent(id)}`,
                 {
@@ -219,30 +204,19 @@ jobs:
           SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
         run: |
           node << 'EOF'
-          const fs = require('fs');
-
-          const registryDir = 'public/registry';
+          const { execSync } = require('child_process');
 
           async function reconcileDev() {
-            const res = await fetch(
-              `${process.env.SUPABASE_DEV_URL}/rest/v1/rooms?registry_id=not.is.null&status=eq.active&select=registry_id`,
-              {
-                headers: {
-                  'apikey': process.env.SUPABASE_DEV_SERVICE_ROLE_KEY,
-                  'Authorization': `Bearer ${process.env.SUPABASE_DEV_SERVICE_ROLE_KEY}`,
-                },
-              }
-            );
-            if (!res.ok) { console.error('Failed to fetch dev rooms', await res.json()); process.exit(1); }
-            const rooms = await res.json();
+            // Only mark rooms deleted if their config.json was removed in this merge commit
+            const deleted = execSync(
+              "git diff HEAD~1 HEAD --diff-filter=D --name-only -- 'public/registry/*/config.json'"
+            ).toString().trim().split('\n')
+              .filter(Boolean)
+              .map(p => p.replace('public/registry/', '').replace('/config.json', ''));
 
-            const toDelete = rooms
-              .map(r => r.registry_id)
-              .filter(id => !fs.existsSync(`${registryDir}/${id}/config.json`));
+            if (!deleted.length) { console.log('Dev in sync — nothing to mark deleted.'); return; }
 
-            if (!toDelete.length) { console.log('Dev in sync — nothing to mark deleted.'); return; }
-
-            await Promise.all(toDelete.map(async id => {
+            await Promise.all(deleted.map(async id => {
               const patch = await fetch(
                 `${process.env.SUPABASE_DEV_URL}/rest/v1/rooms?registry_id=eq.${encodeURIComponent(id)}`,
                 {
