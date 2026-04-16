@@ -52,7 +52,7 @@ export default function ReservationModal({ x, y, onClose, onSuccess }: {
     let roomId = generateRoomId();
     let attempts = 0;
     while (attempts < 10) {
-      const { data: taken } = await supabase
+      const { data: taken } = await supabase!
         .from('rooms')
         .select('id')
         .eq('registry_id', roomId)
@@ -62,7 +62,7 @@ export default function ReservationModal({ x, y, onClose, onSuccess }: {
       attempts++;
     }
 
-    const { data, error: insertError } = await supabase
+    const { data, error: insertError } = await supabase!
       .from('rooms')
       .insert([{
         name: roomId,
