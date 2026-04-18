@@ -15,7 +15,7 @@ Once their Pull Request is merged, their room goes live on the floor plan.
 When a Builder starts a session, ask for their GitHub username, then look up their reserved room:
 
 ```bash
-gh issue list --label room --search "@their-username"
+gh issue list --label room --search "their-username"
 ```
 
 The issue will contain their room ID (e.g. `warm-harbor`). Confirm it with them before moving on.
@@ -80,7 +80,7 @@ If a Builder wants to update their room after it's already live, they use the **
 
 To find open edit tasks for a specific builder:
 ```
-gh issue list --label room --search "(@github-username)"
+gh issue list --label room --search "github-username"
 ```
 
 Once a task issue is open, the Builder forks the repo, makes their changes to `public/registry/their-room-id/`, and opens a Pull Request referencing the issue.
