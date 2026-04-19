@@ -14,7 +14,9 @@ function roomSlug(room: any): string | null {
   return room.registry_id ?? null;
 }
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  : null;
 
 function OpenRoomInner() {
   const router = useRouter();
@@ -28,13 +30,13 @@ function OpenRoomInner() {
   const [successRoom, setSuccessRoom] = useState<{ room: any; roomId: string } | null>(null);
 
   const refreshRooms = useCallback(async () => {
-    const { data } = await supabase.from('rooms').select('*').neq('status', 'deleted');
+    const { data } = await supabase!.from('rooms').select('*').neq('status', 'deleted');
     let roomList = data || [];
     
     // Check for the center piece: The Common Room
     const commonRoom = roomList.find(r => r.grid_x === 0 && r.grid_y === 0);
     if (!commonRoom) {
-      const { data: newHome } = await supabase.from('rooms').insert([{
+      const { data: newHome } = await supabase!.from('rooms').insert([{
         name: 'Common Room',
         owner_name: 'Building Admin',
         owner_id: 'public',
@@ -53,7 +55,7 @@ function OpenRoomInner() {
 
     refreshRooms();
 
-    const channel = supabase.channel('floor-sync')
+    const channel = supabase!.channel('floor-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, (payload) => {
         if (payload.eventType === 'UPDATE') {
           setRooms(prev => prev.map(r => r.id === payload.new.id ? payload.new : r));
@@ -63,7 +65,7 @@ function OpenRoomInner() {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase!.removeChannel(channel); };
   }, [refreshRooms]);
 
   const openRoom = (room: any) => {
