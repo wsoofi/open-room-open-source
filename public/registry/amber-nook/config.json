@@ -17,23 +17,23 @@
     },
     {
       "id": "pegboard",
-      "label": "What I'm Reading",
+      "label": "Where I build things",
       "x": 42,
       "y": 5,
       "width": 20,
       "height": 45,
-      "action": "open_image",
-      "image_url": "/registry/amber-nook/assets/whatimreading.jpg"
+      "action": "open_url",
+      "url": "https://github.com/leedrozak"
     },
     {
       "id": "mug",
-      "label": "Fuel for the work",
+      "label": "What I'm Reading",
       "x": 48,
       "y": 48,
       "width": 8,
       "height": 15,
       "action": "open_url",
-      "url": "https://github.com/leedrozak"
+      "url": "/registry/amber-nook/assets/whatimreading.jpg"
     },
     {
       "id": "door",
