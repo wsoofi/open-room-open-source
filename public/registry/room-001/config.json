@@ -27,10 +27,10 @@
     {
       "id": "registry-clipboard",
       "label": "Registry",
-      "x": 81,
-      "y": 18,
+      "x": 82,
+      "y": 30,
       "width": 11,
-      "height": 24,
+      "height": 20,
       "action": "open_modal",
       "modal": "registry"
     },
@@ -45,10 +45,20 @@
       "modal": "waitlist"
     },
     {
+      "id": "anchors-slides",
+      "label": "Open Room Anchors",
+      "x": 25,
+      "y": 65,
+      "width": 10,
+      "height": 10,
+      "action": "open_url",
+      "url": "https://alyssafuward.github.io/open-room-open-source/open-room-anchors.html"
+    },
+    {
       "id": "exit-door",
       "label": "Exit to Floor Plan",
-      "x": 79,
-      "y": 43,
+      "x": 82,
+      "y": 50,
       "width": 13,
       "height": 40,
       "action": "navigate_floor"
