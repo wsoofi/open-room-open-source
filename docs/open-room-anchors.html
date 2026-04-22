@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Room · April 22</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pale-sky: #F2F8FD;
+    --mid-sky: #C8DEF0;
+    --deep-sky: #1F6FA8;
+    --white: #FFFFFF;
+    --ink: #1A1A1A;
+    --mid-grey: #666666;
+    --rule: #D8ECF8;
+    --orange: #F88C00;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: var(--ink);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top bar */
+  .topbar {
+    background: var(--deep-sky);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 24px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .topbar-title { opacity: 0.85; }
+  .topbar-nav { display: flex; gap: 12px; align-items: center; }
+  .nav-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: white;
+    padding: 5px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.25); }
+  .slide-counter { opacity: 0.7; font-size: 12px; min-width: 50px; text-align: right; }
+
+  /* Stage */
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: #181c22;
+  }
+
+  /* Card */
+  .card {
+    background: var(--pale-sky);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 820px;
+    min-height: 420px;
+    max-height: 520px;
+    display: none;
+    flex-direction: column;
+    padding: 52px 60px 48px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+  }
+  .card.active { display: flex; animation: cardIn 0.35s cubic-bezier(0.22,1,0.36,1); }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Accent strip */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--deep-sky);
+    border-radius: 16px 16px 0 0;
+  }
+
+  /* Eyebrow */
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--deep-sky);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--orange);
+    flex-shrink: 0;
+  }
+
+  /* Headline */
+  .headline {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.6rem;
+    line-height: 1.15;
+    color: var(--ink);
+    margin-bottom: 28px;
+    max-width: 680px;
+  }
+  .headline em {
+    font-style: italic;
+    color: var(--deep-sky);
+  }
+
+  /* Bullets */
+  .bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+  .bullets li {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #333;
+    padding-left: 20px;
+    position: relative;
+  }
+  .bullets li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--mid-sky);
+    font-weight: 600;
+  }
+
+  /* Single big text */
+  .big-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.45rem;
+    line-height: 1.6;
+    color: #444;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    max-width: 640px;
+  }
+
+  /* Two-col layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    flex: 1;
+  }
+  .col-block {
+    background: white;
+    border-radius: 10px;
+    padding: 20px 22px;
+    border: 1px solid var(--rule);
+  }
+  .col-block h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+    color: var(--ink);
+  }
+  .col-block p {
+    font-size: 13.5px;
+    color: #555;
+    line-height: 1.55;
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .step-num {
+    background: var(--deep-sky);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step p { font-size: 14.5px; line-height: 1.5; color: #333; }
+
+  /* Tag pill */
+  .tag {
+    display: inline-block;
+    background: var(--mid-sky);
+    color: var(--deep-sky);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    margin-left: 6px;
+  }
+
+  /* Callout box */
+  .callout {
+    background: white;
+    border-left: 3px solid var(--orange);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #444;
+  }
+
+  /* Bottom dots */
+  .dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px;
+    background: #181c22;
+    flex-shrink: 0;
+  }
+  .dot-pip {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .dot-pip.active { background: var(--mid-sky); }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-title">Open Room · April 22, 2026</span>
+  <div class="topbar-nav">
+    <button class="nav-btn" onclick="prev()">← prev</button>
+    <button class="nav-btn" onclick="next()">next →</button>
+    <span class="slide-counter" id="counter">1 / 9</span>
+  </div>
+</div>
+
+<div class="stage">
+
+  <!-- 1: Welcome -->
+  <div class="card active" id="s1">
+    <div class="eyebrow"><span class="dot"></span>Open Room · Onboarding</div>
+    <div class="headline">Thank you<br>for being here.</div>
+    <div class="big-text" style="font-size:1.15rem; color:#555; align-items:flex-start; padding-top:0;">
+      We're building something together today.<br>
+      But first — let's actually meet each other.
+    </div>
+  </div>
+
+  <!-- 2: Intros -->
+  <div class="card" id="s2">
+    <div class="eyebrow"><span class="dot"></span>Say hi</div>
+    <div class="headline">Introduce<br>yourself.</div>
+    <ul class="bullets">
+      <li>Your name</li>
+      <li>What you write about (or why you're here)</li>
+      <li>What you're hoping to get out of today</li>
+    </ul>
+  </div>
+
+  <!-- 3: Two goals -->
+  <div class="card" id="s3">
+    <div class="eyebrow"><span class="dot"></span>Today's goals</div>
+    <div class="headline">Two things<br>I want for us.</div>
+    <div class="two-col">
+      <div class="col-block">
+        <h3>🚀 Every single one of you ships a room.</h3>
+        <p>Not a demo. Not a preview. An actual room that goes live on the actual site.</p>
+      </div>
+      <div class="col-block">
+        <h3>✨ We have fun and make new connections.</h3>
+        <p>This is a meetup as much as it's a workshop. Both count.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4: What is Open Room -->
+  <div class="card" id="s4">
+    <div class="eyebrow"><span class="dot"></span>What is this</div>
+    <div class="headline"><em>Open Room</em> is a<br>community building.</div>
+    <ul class="bullets">
+      <li>An infinite virtual floor plan — every tile is a room</li>
+      <li>Every room was designed by a real person, with AI</li>
+      <li>When your room is merged, it's live. Real people can visit it.</li>
+      <li>You get to decide what's in it</li>
+    </ul>
+    <div class="callout">open-room-open-source.vercel.app</div>
+  </div>
+
+  <!-- 5: Breakout -->
+  <div class="card" id="s5">
+    <div class="eyebrow"><span class="dot"></span>Breakout · 5 min</div>
+    <div class="headline">What do you<br>want to build?</div>
+    <div class="big-text" style="font-size:1.1rem; color:#555; align-items:flex-start;">
+      Groups of 3. Share the image you picked — and what you'd put in your room.<br><br>
+      What does it mean to you? What would someone find when they walk in?
+    </div>
+  </div>
+
+  <!-- 6: Reserve a room -->
+  <div class="card" id="s6">
+    <div class="eyebrow"><span class="dot"></span>Step 1</div>
+    <div class="headline">Reserve<br>your room.</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><p>Go to the site → click <strong>+ Add Room</strong></p></div>
+      <div class="step"><div class="step-num">2</div><p>Enter your GitHub username + email</p></div>
+      <div class="step"><div class="step-num">3</div><p>You get a room ID — two words, like <strong>quiet-glade</strong></p></div>
+      <div class="step"><div class="step-num">4</div><p>In the background: a GitHub ticket is created to track your room <span class="tag">we'll come back to this</span></p></div>
+    </div>
+  </div>
+
+  <!-- 7: GitHub -->
+  <div class="card" id="s7">
+    <div class="eyebrow"><span class="dot"></span>What is GitHub</div>
+    <div class="headline">Think of it like<br>tracked drafts.</div>
+    <ul class="bullets">
+      <li>You know how you have draft 1, draft 2, draft 3 — and you can't remember what changed?</li>
+      <li>GitHub tracks every single change, meticulously</li>
+      <li>It also lets you work on a <em>copy</em> of the live site, so if something breaks — the real site stays up</li>
+      <li>Something will probably break today. That's normal. Even senior engineers break things.</li>
+    </ul>
+    <div class="callout">Breaking something isn't a sign you can't do this. It's just part of it.</div>
+  </div>
+
+  <!-- 8: Fire the AI -->
+  <div class="card" id="s8">
+    <div class="eyebrow"><span class="dot"></span>Step 2</div>
+    <div class="headline">Fire up<br>your AI.</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><p>Open Claude Code (or Gemini CLI)</p></div>
+      <div class="step"><div class="step-num">2</div><p>Paste: <strong>https://github.com/alyssafuward/open-room-open-source</strong></p></div>
+      <div class="step"><div class="step-num">3</div><p>Tell it: <em>"I created a room. Help me set it up."</em></p></div>
+      <div class="step"><div class="step-num">4</div><p>It'll ask your GitHub username → it finds your ticket → it knows what to do from there</p></div>
+    </div>
+  </div>
+
+  <!-- 9: Let's go -->
+  <div class="card" id="s9">
+    <div class="eyebrow"><span class="dot"></span>Let's build</div>
+    <div class="headline">Okay.<br><em>Let's go.</em></div>
+    <div class="big-text" style="font-size:1.1rem; color:#555; align-items:flex-start;">
+      By the end of this session, your room is live.<br><br>
+      We figure it out together. That's the whole point.
+    </div>
+  </div>
+
+</div>
+
+<div class="dots" id="dots"></div>
+
+<script>
+  const total = 9;
+  let current = 1;
+
+  const dotsEl = document.getElementById('dots');
+  for (let i = 1; i <= total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-pip' + (i === 1 ? ' active' : '');
+    d.onclick = () => go(i);
+    dotsEl.appendChild(d);
+  }
+
+  function go(n) {
+    document.getElementById('s' + current)?.classList.remove('active');
+    document.querySelectorAll('.dot-pip')[current - 1]?.classList.remove('active');
+    current = Math.max(1, Math.min(total, n));
+    document.getElementById('s' + current)?.classList.add('active');
+    document.querySelectorAll('.dot-pip')[current - 1]?.classList.add('active');
+    document.getElementById('counter').textContent = current + ' / ' + total;
+  }
+
+  function next() { go(current + 1); }
+  function prev() { go(current - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
+  });
+</script>
+</body>
+</html>
