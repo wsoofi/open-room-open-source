@@ -10,7 +10,7 @@
       "label": "Return to Floor Plan",
       "x": 40, 
       "y": 70, 
-      "width": 5, 
+      "width": 40, 
       "height": 5,
       "action": "navigate_floor"
     }
